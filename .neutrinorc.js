@@ -1,6 +1,6 @@
 module.exports = {
   options: {
-    output: "lib"
+    output: 'lib'
   },  
   use: [
     '@neutrinojs/standardjs',
@@ -8,7 +8,7 @@ module.exports = {
       '@neutrinojs/library',
       {
         name: 'barejs-graphql-client',
-        target: "web"
+        target: 'web'
       }
     ]
   ]
