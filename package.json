@@ -1,0 +1,25 @@
+{
+  "name": "@barejs/graphql-client",
+  "private": false,
+  "version": "0.1.0",
+  "description": "GraphQL clients for the Python bareASGI web toolkit",
+  "keywords": [
+    "graphql",
+    "client",
+    "bareasgi"
+  ],
+  "main": "lib/index.js",
+  "repository": "git@github.com:rob-blackbourn/barejs-graphql-client.git",
+  "homepage": "https://github.com/rob-blackbourn/barejs-graphql-client",
+  "author": "Rob Blackbourn <rob.blackbourn@gmail.com>",
+  "license": "Apache-2.0",
+  "scripts": {
+    "build": "neutrino build",
+    "lint": "neutrino lint"
+  },
+  "devDependencies": {
+    "@neutrinojs/library": "^8.3.0",
+    "@neutrinojs/standardjs": "^8.3.0",
+    "neutrino": "^8.3.0"
+  }
+}
