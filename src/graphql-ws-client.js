@@ -1,4 +1,6 @@
 import FetchError from './fetch-error'
+// import graphQLSubscriber from './graphql-ws-subscriber'
+import graphQLWsSubscriber from './graphql-ws-subscriber'
 
 export default function graphqlClient (url, query, variables, operationName, onNext, onError, onComplete) {
   const abortController = new AbortController()
@@ -28,22 +30,13 @@ export default function graphqlClient (url, query, variables, operationName, onN
 
         // The url for the event source is passed in the 'location' header.
         const location = response.headers.get('location')
+        const index = location.indexOf('?')
+        const wsUrl = 'ws' + location.slice(4, index === -1 ? undefined : index)
 
-        const eventSource = new EventSource(location)
-
-        eventSource.onmessage = event => {
-          const data = JSON.parse(event.data)
-          onNext(data)
-        }
-
-        eventSource.onerror = error => {
-          onError(error)
-        }
+        const unsubscribe = graphQLWsSubscriber(wsUrl, query, variables, operationName, onNext, onError, onComplete)
 
         abortController.signal.onabort = () => {
-          if (eventSource.readyState !== 2) {
-            eventSource.close()
-          }
+          unsubscribe()
         }
       } else {
         onError(new FetchError(response, 'Failed to execute GraphQL'))

@@ -1,15 +1,59 @@
-export default function graphqlEventSourceClient (url, query, variables, operationName, onError, onSuccess) {
-  let subscriptionUrl = url + '?query=' + encodeURIComponent(query)
-  if (variables) {
-    subscriptionUrl += '&variables=' + encodeURIComponent(JSON.stringify(variables))
-  }
-  if (operationName) {
-    subscriptionUrl += '&operationName=' + encodeURIComponent(operationName)
-  }
+import FetchError from './fetch-error'
 
-  const eventSource = new EventSource(subscriptionUrl)
-  eventSource.onmessage = event => onSuccess(JSON.parse(event.data))
-  eventSource.onerror = error => onError(error)
-  // Return the close function to unsubscribe.
-  return eventSource.close
+export default function graphqlClient (url, query, variables, operationName, onNext, onError, onComplete) {
+  const abortController = new AbortController()
+
+  // Invoke fetch as a POST with the GraphQL content in the body.
+  fetch(url, {
+    method: 'POST',
+    signal: abortController.signal,
+    body: JSON.stringify({
+      query,
+      variables,
+      operationName
+    })
+  })
+    .then(response => {
+      if (response.status === 200) {
+        // A 200 response is from a query or mutation.
+
+        response.json()
+          .then(json => {
+            onNext(json)
+            onComplete()
+          })
+          .catch(error => onError(error))
+      } else if (response.status === 201) {
+        // A 201 is the response for a subscription.
+
+        // The url for the event source is passed in the 'location' header.
+        const location = response.headers.get('location')
+
+        const eventSource = new EventSource(location)
+
+        eventSource.onmessage = event => {
+          const data = JSON.parse(event.data)
+          onNext(data)
+        }
+
+        eventSource.onerror = error => {
+          onError(error)
+        }
+
+        abortController.signal.onabort = () => {
+          if (eventSource.readyState !== 2) {
+            eventSource.close()
+            onComplete()
+          }
+        }
+      } else {
+        onError(new FetchError(response, 'Failed to execute GraphQL'))
+      }
+    })
+    .catch(error => onError(error))
+
+  // Return an unsubscribe function.
+  return () => {
+    abortController.abort()
+  }
 }

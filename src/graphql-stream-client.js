@@ -1,17 +1,19 @@
-function makeWriteableEventStream (eventTarget) {
+function makeWriteableStream (onNext, onError, onComplete) {
   return new WritableStream({
-    start (controller) {
-      eventTarget.dispatchEvent(new Event('close'))
-    },
     write (chunk, controller) {
-      console.log('event-stream', chunk)
-      eventTarget.dispatchEvent(new MessageEvent(chunk.type, chunk.details))
+      if (chunk.type === 'message') {
+        onNext(chunk.details)
+      }
     },
     close (controller) {
-      eventTarget.dispatchEvent(new Event('close'))
+      onComplete()
     },
     abort (reason) {
-      eventTarget.dispatchEvent(new CustomEvent('abort', { detail: reason }))
+      if (reason.name === 'AbortError') {
+        onComplete()
+      } else {
+        onError(reason)
+      }
     }
   })
 }
@@ -41,25 +43,6 @@ function makeJsonDecoder () {
   })
 }
 
-function fetchEventTarget (input, init) {
-  const eventTarget = new EventTarget()
-  // const sseDecoder = makeSseDecoder(input)
-  const jsonDecoder = makeJsonDecoder(input)
-  const stream = makeWriteableEventStream(eventTarget)
-  fetch(input, init)
-    .then(response => {
-      response.body
-        // eslint-disable-next-line no-undef
-        .pipeThrough(new TextDecoderStream())
-        .pipeThrough(jsonDecoder)
-        .pipeTo(stream)
-    })
-    .catch(error => {
-      eventTarget.dispatchEvent(new CustomEvent('error', { detail: error }))
-    })
-  return eventTarget
-}
-
 export default function graphqlStreamClient (url, query, variables, operation, onNext, onError, onComplete) {
   const body = JSON.stringify({
     query, variables, operation
@@ -78,9 +61,8 @@ export default function graphqlStreamClient (url, query, variables, operation, o
     signal: abortController.signal
   })
     .then(response => {
-      console.log(response)
       if (response.status === 200) {
-        // This is a query result, so just show the data.
+        // This is a query result, so just show the data.onNext
         response.text()
           .then(text => {
             onNext(text)
@@ -94,8 +76,8 @@ export default function graphqlStreamClient (url, query, variables, operation, o
         // returned in the "Location" header which we can
         // consume with a streaming fetch.
         const location = response.headers.get('location')
-        const eventSource = fetchEventTarget(location, {
-          method: 'POST',
+        const init = {
+          method,
           headers: new Headers({
             allow: method,
             'content-type': 'application/json',
@@ -104,10 +86,23 @@ export default function graphqlStreamClient (url, query, variables, operation, o
           mode: 'cors',
           body,
           signal: abortController.signal
-        })
-        eventSource.addEventListener('message', (event) => {
-          onNext(event.data)
-        })
+        }
+        const jsonDecoder = makeJsonDecoder(location)
+        const writeableStream = makeWriteableStream(onNext, onError, onComplete)
+        fetch(location, init)
+          .then(response => {
+            response.body
+              // eslint-disable-next-line no-undef
+              .pipeThrough(new TextDecoderStream())
+              .pipeThrough(jsonDecoder)
+              .pipeTo(writeableStream)
+              .catch(() => {
+                // Errors are handled in the writeable stream
+              })
+          })
+          .catch(error => {
+            onError(error)
+          })
       } else {
         onError(new Error('Unhandled response'))
       }
