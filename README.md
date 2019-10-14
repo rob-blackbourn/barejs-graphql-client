@@ -86,9 +86,9 @@ unsubscribe()
 
 There are three `graphqlClient` functions:
 
-* `graphqlWsClient`: uses a WebSocket as the subscription transport,
-* `graphqlEventSourceClient`: uses an `EventSource` as the subscription transport,
-* `graphqlStreamClient`: uses a streaming fetch as the subscription transport.
+* `graphqlWsClient`
+* `graphqlEventSourceClient`
+* `graphqlStreamClient`
 
 They take the same arguments as `graphqlClient` which is an alias for `graphqlWsClient`.
 
