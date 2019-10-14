@@ -32,7 +32,7 @@ class Subscriber {
 
     this.webSocket.onclose = event => {
       // The code 1000 (Normal Closure) is special, and results in no error or payload.
-      const error = event.code === 1000 ? null : new EventError(event)
+      const error = event.code === 1000 || event.code === 1005 ? null : new EventError(event)
       // Notify the subscriber.
       this.callback(error)
       // Notify the subscriptions.
@@ -143,11 +143,12 @@ export default function graphQLWsSubscriber (url, query, variables, operationNam
         // Normal closure.
         onComplete()
       } else if (error) {
-        if (error.event instanceof CloseEvent) {
-          onComplete()
-        } else {
-          onError(error)
-        }
+        onError(error)
+        // if (error.event instanceof CloseEvent) {
+        //   onComplete()
+        // } else {
+        //   onError(error)
+        // }
       } else {
         unsubscribe = subscribe(
           query,
@@ -157,11 +158,8 @@ export default function graphQLWsSubscriber (url, query, variables, operationNam
             if (!(error || subscribe)) {
               // Normal closure
               onComplete()
-            } else if (error) {
-              console.error(error)
-              onError(error)
             } else {
-              onNext(data)
+              onNext({ error, data })
             }
           })
       }

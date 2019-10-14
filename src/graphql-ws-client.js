@@ -42,7 +42,9 @@ export default function graphqlClient (url, query, variables, operationName, onN
         onError(new FetchError(response, 'Failed to execute GraphQL'))
       }
     })
-    .catch(error => onError(error))
+    .catch(error => {
+      onError(error)
+    })
 
   // Return an unsubscribe function.
   return () => {
