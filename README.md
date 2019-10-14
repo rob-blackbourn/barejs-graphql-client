@@ -2,7 +2,10 @@
 
 This is a simple GraphQL client which supports queries, mutations and subscriptions.
 
-The default client is compatible with most GraphQL servers. There are two additional
+The default client is compatible with most GraphQL servers using the 
+[appolo](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md)
+protocol.
+There are two additional
 clients which are written specifically to support the
 [bareASGI GraphQL](https://bareasgi-graphql-next.readthedocs.io/en/latest/index.html#)
 middleware.
