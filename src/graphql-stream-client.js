@@ -46,9 +46,9 @@ function makeLineDecoder () {
   })
 }
 
-export default function graphqlStreamClient (url, query, variables, operation, onNext, onError, onComplete) {
+export default function graphqlStreamClient (url, query, variables, operationName, onNext, onError, onComplete) {
   const body = JSON.stringify({
-    query, variables, operation
+    query, variables, operationName
   })
   const method = 'POST'
   const abortController = new AbortController()

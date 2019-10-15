@@ -132,7 +132,7 @@ class Subscriber {
   }
 }
 
-export default function graphQLWsSubscriber (url, query, variables, operationName, onNext, onError, onComplete) {
+export default function graphqlWsSubscriber (url, query, variables, operationName, onNext, onError, onComplete) {
   let unsubscribe = null
 
   const subscriber = new Subscriber(
@@ -144,22 +144,17 @@ export default function graphQLWsSubscriber (url, query, variables, operationNam
         onComplete()
       } else if (error) {
         onError(error)
-        // if (error.event instanceof CloseEvent) {
-        //   onComplete()
-        // } else {
-        //   onError(error)
-        // }
       } else {
         unsubscribe = subscribe(
           query,
           variables,
           operationName,
-          (error, data) => {
-            if (!(error || subscribe)) {
+          (errors, data) => {
+            if (!(errors || subscribe)) {
               // Normal closure
               onComplete()
             } else {
-              onNext({ error, data })
+              onNext({ data, errors })
             }
           })
       }

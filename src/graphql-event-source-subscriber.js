@@ -1,4 +1,4 @@
-export default function graphqlEventSourceSubscriber (url, query, variables, operationName, onError, onSuccess) {
+export default function graphqlEventSourceSubscriber (url, query, variables, operationName, onNext, onError, onComplete) {
   let subscriptionUrl = url + '?query=' + encodeURIComponent(query)
   if (variables) {
     subscriptionUrl += '&variables=' + encodeURIComponent(JSON.stringify(variables))
@@ -8,8 +8,23 @@ export default function graphqlEventSourceSubscriber (url, query, variables, ope
   }
 
   const eventSource = new EventSource(subscriptionUrl)
-  eventSource.onmessage = event => onSuccess(JSON.parse(event.data))
-  eventSource.onerror = error => onError(error)
-  // Return the close function to unsubscribe.
-  return eventSource.close
+
+  eventSource.onmessage = event => {
+    const data = JSON.parse(event.data)
+    onNext(data)
+  }
+
+  eventSource.onerror = error => {
+    onError(error)
+  }
+
+  const abortController = new AbortController()
+  abortController.signal.onabort = () => {
+    if (eventSource.readyState !== 2) {
+      eventSource.close()
+      onComplete()
+    }
+  }
+
+  return abortController.abort
 }

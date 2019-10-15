@@ -1,8 +1,8 @@
 import FetchError from './fetch-error'
 // import graphQLSubscriber from './graphql-ws-subscriber'
-import graphQLWsSubscriber from './graphql-ws-subscriber'
+import graphqlWsSubscriber from './graphql-ws-subscriber'
 
-export default function graphqlClient (url, query, variables, operationName, onNext, onError, onComplete) {
+export default function graphqlWsClient (url, query, variables, operationName, onNext, onError, onComplete) {
   const abortController = new AbortController()
 
   // Invoke fetch as a POST with the GraphQL content in the body.
@@ -33,7 +33,7 @@ export default function graphqlClient (url, query, variables, operationName, onN
         const index = location.indexOf('?')
         const wsUrl = 'ws' + location.slice(4, index === -1 ? undefined : index)
 
-        const unsubscribe = graphQLWsSubscriber(wsUrl, query, variables, operationName, onNext, onError, onComplete)
+        const unsubscribe = graphqlWsSubscriber(wsUrl, query, variables, operationName, onNext, onError, onComplete)
 
         abortController.signal.onabort = () => {
           unsubscribe()
