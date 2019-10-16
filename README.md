@@ -38,17 +38,17 @@ graphqlFetchClient(
 
 ### Subscriptions
 
-The `graphQLWsSubscriber` can be used for subscriptions.
+The `graphqlWsSubscriber` can be used for subscriptions.
 
 ```js
-import { graphQLWsSubscriber } from '@barejs/graphql-client'
+import { graphqlWsSubscriber } from '@barejs/graphql-client'
 
 const url = 'http://www.example.com/sse-subscription'
 const query = 'subscription { someSubscription { someField someOtherField } }'
 const variables = null
 const operationName = null
 
-graphQLWsSubscriber(
+graphqlWsSubscriber(
   url,
   query,
   variables,
