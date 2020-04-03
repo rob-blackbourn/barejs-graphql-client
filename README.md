@@ -22,6 +22,7 @@ import { graphqlFetchClient } from '@barejs/graphql-client'
 
 const url = 'http://www.example.com/graphql'
 const init {}
+
 const query = 'query { someQuery { someField someOtherField } }'
 const variables = null
 const operationName = null
@@ -44,12 +45,15 @@ The `graphqlWsSubscriber` can be used for subscriptions.
 import { graphqlWsSubscriber } from '@barejs/graphql-client'
 
 const url = 'http://www.example.com/sse-subscription'
+const init = {}
+
 const query = 'subscription { someSubscription { someField someOtherField } }'
 const variables = null
 const operationName = null
 
 graphqlWsSubscriber(
   url,
+  init,
   query,
   variables,
   operationName,
@@ -68,6 +72,7 @@ server.
 import { graphqlClient } from '@barejs/graphql-client'
 
 const url = 'http://www.example.com/graphql'
+const init = {}
 
 // This could be a query, mutation or subscription.
 const query = 'subscription { someSubscription { someField someOtherField } }'
@@ -76,6 +81,7 @@ const operationName = null
 
 const unsubscribe = graphqlClient(
   url,
+  init,
   query,
   variables,
   operationName,

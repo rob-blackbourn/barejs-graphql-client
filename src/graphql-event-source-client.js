@@ -1,6 +1,6 @@
 import FetchError from './fetch-error'
 
-export default function graphqlClient (url, query, variables, operationName, onNext, onError, onComplete) {
+export default function graphqlClient (url, init, query, variables, operationName, onNext, onError, onComplete) {
   const abortController = new AbortController()
 
   // Invoke fetch as a POST with the GraphQL content in the body.
@@ -11,7 +11,8 @@ export default function graphqlClient (url, query, variables, operationName, onN
       query,
       variables,
       operationName
-    })
+    }),
+    ...init
   })
     .then(response => {
       if (response.status === 200) {

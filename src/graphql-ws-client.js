@@ -2,7 +2,7 @@ import FetchError from './fetch-error'
 // import graphQLSubscriber from './graphql-ws-subscriber'
 import graphqlWsSubscriber from './graphql-ws-subscriber'
 
-export default function graphqlWsClient (url, query, variables, operationName, onNext, onError, onComplete) {
+export default function graphqlWsClient (url, init, query, variables, operationName, onNext, onError, onComplete) {
   const abortController = new AbortController()
 
   // Invoke fetch as a POST with the GraphQL content in the body.
@@ -13,7 +13,8 @@ export default function graphqlWsClient (url, query, variables, operationName, o
       query,
       variables,
       operationName
-    })
+    }),
+    ...init
   })
     .then(response => {
       if (response.status === 200) {

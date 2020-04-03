@@ -46,7 +46,7 @@ function makeLineDecoder () {
   })
 }
 
-export default function graphqlStreamClient (url, query, variables, operationName, onNext, onError, onComplete) {
+export default function graphqlStreamClient (url, init, query, variables, operationName, onNext, onError, onComplete) {
   const body = JSON.stringify({
     query, variables, operationName
   })
@@ -58,11 +58,13 @@ export default function graphqlStreamClient (url, query, variables, operationNam
     headers: new Headers({
       allow: method,
       'content-type': 'application/json',
-      accept: 'application/json'
+      accept: 'application/json',
+      ...(init || {}).headers
     }),
     mode: 'cors',
     body,
-    signal: abortController.signal
+    signal: abortController.signal,
+    ...init
   })
     .then(response => {
       if (response.status === 200) {
