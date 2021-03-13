@@ -1,5 +1,4 @@
 import FetchError from './fetch-error'
-// import graphQLSubscriber from './graphql-ws-subscriber'
 import graphqlWsSubscriber from './graphql-ws-subscriber'
 
 export default function graphqlWsClient (url, init, query, variables, operationName, onNext, onError, onComplete) {

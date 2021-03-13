@@ -1,7 +1,7 @@
 {
   "name": "@barejs/graphql-client",
   "private": false,
-  "version": "4.0.0",
+  "version": "5.0.0",
   "description": "GraphQL clients for the Python bareASGI web toolkit",
   "keywords": [
     "graphql",
@@ -14,12 +14,10 @@
   "author": "Rob Blackbourn <rob.blackbourn@gmail.com>",
   "license": "Apache-2.0",
   "scripts": {
-    "build": "neutrino build",
-    "lint": "neutrino lint"
+    "build": "rollup -c"
   },
   "devDependencies": {
-    "@neutrinojs/library": "^8.3.0",
-    "@neutrinojs/standardjs": "^8.3.0",
-    "neutrino": "^8.3.0"
+    "rollup": "^2.41.2",
+    "rollup-plugin-terser": "^7.0.2"
   }
 }
