@@ -1,14 +1,23 @@
 # @barejs/graphql-client
 
-This is a simple GraphQL client which supports queries, mutations and subscriptions.
+This is a collection of GraphQL clients which support queries, mutations and subscriptions.
 
-The default client is compatible with most GraphQL servers using the 
-[appolo](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md)
-protocol.
-There are two additional
-clients which are written specifically to support the
-[bareASGI GraphQL](https://bareasgi-graphql-next.readthedocs.io/en/latest/index.html#)
-middleware.
+It specifically targets the 
+[bareASGI GraphQL](https://github.com/rob-blackbourn/bareASGI-graphql-next)
+module from the
+[bareASGI](https://github.com/rob-blackbourn/bareASGI)
+python web framework. This framework provides two novel features.
+
+* Server side identification of subscriptions (by returning a 201 if the query was a subscription),
+* Multiple subscription transports ([WebSocket](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket), [EventSource (server sent events)](https://developer.mozilla.org/en-US/docs/Web/API/EventSource), and [fetch](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) with [ReadableStream](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream).
+
+Because the
+[ReadableStream](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream) api is a feature of
+[fetch](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API),
+it can provide headers to the server, allowing CORS and authentication to be maintained. This is a relatively new feature; in particular the
+[pipeThrough](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream/pipeThrough) and
+[pipeTo](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream/pipeTo)
+methods (which are used by the client) are still marked as "experimental". At the time of writing this is supported by most common browsers with the notable exception of FireFox (and Internet Explorer, obviously).
 
 ## Usage
 
@@ -63,13 +72,13 @@ graphqlWsSubscriber(
 
 ### Queries, Mutations and Subscriptions
 
-The `graphqlClient` can be used for queries, mutations, or subscriptions when using
+The `graphqlWsClient` can be used for queries, mutations, or subscriptions when using
 the 
 [bareASGI-graphql-next server](https://github.com/rob-blackbourn/bareasgi-graphql-next)
-server. 
+server, using web sockets as the underlying subscription transport.
 
 ```js
-import { graphqlClient } from '@barejs/graphql-client'
+import { graphqlWsClient } from '@barejs/graphql-client'
 
 const url = 'http://www.example.com/graphql'
 const init = {}
@@ -79,7 +88,7 @@ const query = 'subscription { someSubscription { someField someOtherField } }'
 const variables = null
 const operationName = null
 
-const unsubscribe = graphqlClient(
+const unsubscribe = graphqlWsClient(
   url,
   init,
   query,
@@ -93,13 +102,13 @@ const unsubscribe = graphqlClient(
 unsubscribe()
 ```
 
-There are three `graphqlClient` functions:
+There are three client functions:
 
 * `graphqlWsClient`
 * `graphqlEventSourceClient`
 * `graphqlStreamClient`
 
-They take the same arguments as `graphqlClient` which is an alias for `graphqlWsClient`.
+They take the same arguments as `graphqlWsClient`.
 
 #### graphqlWsClient
 
@@ -124,10 +133,7 @@ The `graphqlStreamClient` uses a streaming fetch with `ReadableStreams` as the
 subscription transport. This is the most efficient
 transport, but is only supported by the
 [bareASGI-graphql-next server](https://github.com/rob-blackbourn/bareasgi-graphql-next)
-server. The request method is `POST` to large queries are not a problem.
-
-The implementation uses `pipes` which are currently only implemented in the Chrome 
-browser, but polyfills are available for most major browsers.
+server. The request method is `POST` so large queries are not a problem.
 
 ## Installation
 

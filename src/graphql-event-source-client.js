@@ -1,6 +1,18 @@
 import FetchError from './fetch-error'
 
-export default function graphqlClient (url, init, query, variables, operationName, onNext, onError, onComplete) {
+/**
+ * Create a graphQL client that can be used for Query, Mutation and Subscription, using server sent events.
+ * @param {string} url - The url to target.
+ * @param {Object} init - Extra arguments for fetch.
+ * @param {string} query - The query.
+ * @param {Object} [variables] - Query variables.
+ * @param {string} [operationName] - The name of the operation to invoke.
+ * @param {NextValue} onNext - Called when GraphQL provides data.
+ * @param {function} onError - Called when an error has occurred.
+ * @param {function} onComplete - Called when the operation is complete.
+ * @returns {function} - A function that can be called to terminate the operation.
+ */
+export default function graphqlEventSourceClient (url, init, query, variables, operationName, onNext, onError, onComplete) {
   const abortController = new AbortController()
 
   // Invoke fetch as a POST with the GraphQL content in the body.

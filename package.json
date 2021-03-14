@@ -1,23 +1,32 @@
 {
   "name": "@barejs/graphql-client",
   "private": false,
-  "version": "5.0.0",
+  "version": "5.0.1",
   "description": "GraphQL clients for the Python bareASGI web toolkit",
   "keywords": [
     "graphql",
     "client",
     "bareasgi"
   ],
-  "main": "lib/index.js",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "browser": "dist/index.umd.js",
+  "browserMinified": "dist/index.umd.min.js",
   "repository": "git@github.com:rob-blackbourn/barejs-graphql-client.git",
   "homepage": "https://github.com/rob-blackbourn/barejs-graphql-client",
   "author": "Rob Blackbourn <rob.blackbourn@gmail.com>",
   "license": "Apache-2.0",
   "scripts": {
-    "build": "rollup -c"
+    "build": "rollup -c",
+    "dev": "rollup -c -w"
   },
   "devDependencies": {
+    "@rollup/plugin-commonjs": "^17.1.0",
+    "@rollup/plugin-node-resolve": "^11.2.0",
     "rollup": "^2.41.2",
     "rollup-plugin-terser": "^7.0.2"
-  }
+  },
+  "files": [
+    "dist"
+  ]
 }
