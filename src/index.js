@@ -13,6 +13,5 @@ export {
   graphqlFetchClient,
   graphqlStreamClient,
   graphqlWsSubscriber,
-  graphqlWsClient,
-  graphqlWsClient as graphqlClient
+  graphqlWsClient
 }

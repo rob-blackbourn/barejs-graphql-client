@@ -1,3 +1,5 @@
+import mergeDeep from './merge-deep'
+
 function makeWriteableStream (onNext, onError, onComplete) {
   return new WritableStream({
     write (chunk, controller) {
@@ -46,26 +48,35 @@ function makeLineDecoder () {
   })
 }
 
+/**
+ * A GraphQL client using a streaming fetch. This can support Query, Mutation, and Subscription.
+ * @param {string} url - The GraphQL url.
+ * @param {Object} init - Additional parameters passed to fetch.
+ * @param {string} query - The GraphQL query.
+ * @param {Object} [variables] - Any variables required by the query.
+ * @param {string} [operationName] - The name of the operation to invoke,
+ * @param {function} onNext - The function called when data is provided.
+ * @param {function} onError - The function called when an error occurs.
+ * @param {function} onComplete - The function called when the operation has completed.
+ * @returns {function} - A function that can be called to terminate the operation.
+ */
 export default function graphqlStreamClient (url, init, query, variables, operationName, onNext, onError, onComplete) {
-  const body = JSON.stringify({
-    query, variables, operationName
-  })
-  const method = 'POST'
   const abortController = new AbortController()
-
-  fetch(url, {
-    method,
-    headers: new Headers({
-      allow: method,
+  init = mergeDeep({
+    method: 'POST',
+    headers: {
       'content-type': 'application/json',
-      accept: 'application/json',
-      ...(init || {}).headers
+      accept: 'application/json'
+    },
+    body: JSON.stringify({
+      query,
+      variables,
+      operationName
     }),
-    mode: 'cors',
-    body,
-    signal: abortController.signal,
-    ...init
-  })
+    signal: abortController.signal
+  }, init)
+
+  fetch(url, init)
     .then(response => {
       if (response.status === 200) {
         // A streaming response is a subscription.

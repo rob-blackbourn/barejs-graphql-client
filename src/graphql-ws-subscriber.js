@@ -132,6 +132,17 @@ class Subscriber {
   }
 }
 
+/**
+ * A GraphQL web socket subscriber.
+ * @param {string} url - The GraphQL url.
+ * @param {string} query - The GraphQL query.
+ * @param {Object} [variables] - Any variables required by the query.
+ * @param {string} [operationName] - The name of the operation to invoke,
+ * @param {function} onNext - The function called when data is provided.
+ * @param {function} onError - The function called when an error occurs.
+ * @param {function} onComplete - The function called when the operation has completed.
+ * @returns {function} - A function that can be called to terminate the operation.
+ */
 export default function graphqlWsSubscriber (url, query, variables, operationName, onNext, onError, onComplete) {
   let unsubscribe = null
 
