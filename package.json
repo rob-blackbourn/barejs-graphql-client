@@ -1,7 +1,7 @@
 {
   "name": "@barejs/graphql-client",
   "private": false,
-  "version": "5.0.3",
+  "version": "5.0.4",
   "description": "GraphQL clients for the Python bareASGI web toolkit",
   "keywords": [
     "graphql",
@@ -9,9 +9,6 @@
     "bareasgi"
   ],
   "main": "dist/index.js",
-  "mainCjs": "dist/index.cjs.js",
-  "browser": "dist/index.umd.js",
-  "browserMinified": "dist/index.umd.min.js",
   "repository": "git@github.com:rob-blackbourn/barejs-graphql-client.git",
   "homepage": "https://github.com/rob-blackbourn/barejs-graphql-client",
   "author": "Rob Blackbourn <rob.blackbourn@gmail.com>",

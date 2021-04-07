@@ -10,12 +10,12 @@ export default [
     output: [
       {
         name: "graphqlClient",
-        file: pkg.browser,
+        file: 'dist/browser/index.js',
         format: "umd",
       },
       {
         name: "graphqlClient",
-        file: pkg.browserMinified,
+        file: 'dist/browser/index.min.js',
         format: "umd",
         sourcemap: true,
         plugins: [terser()],
@@ -32,8 +32,14 @@ export default [
 		input: 'src/index.js',
 		external: [],
 		output: [
-			{ file: pkg.main, format: 'es' },
-			{ file: pkg.mainCjs, format: 'cjs' }
+			{
+        file: 'dist/index.js',
+        format: 'es'
+      },
+			{
+        file: 'dist/cjs/index.js',
+        format: 'cjs'
+      }
 		]
 	}
 ];
