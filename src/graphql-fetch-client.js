@@ -1,4 +1,5 @@
 import FetchError from './fetch-error'
+import mergeDeep from './merge-deep'
 
 /**
  * A simple fetch-based GraphQL client. This can handle Query and Mutation.
@@ -9,17 +10,25 @@ import FetchError from './fetch-error'
  * @param {string} [operationName] - The name of the operation to invoke.
  * @param {function} onError - The function called when an error has occurred.
  * @param {function} onSuccess - The function called when the query has been successfully invoked.
+ * @returns {function} - A function that can be called to terminate the operation.
  */
 export default function graphqlFetchClient (url, init, query, variables, operationName, onError, onSuccess) {
-  fetch(url, {
+  const abortController = new AbortController()
+  init = mergeDeep({
     method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      accept: 'application/json'
+    },
     body: JSON.stringify({
       query,
       variables,
       operationName
     }),
-    ...init
-  })
+    signal: abortController.signal,
+  }, init)
+
+  fetch(url, init)
     .then(response => {
       if (response.ok) {
         response.json()
@@ -32,4 +41,9 @@ export default function graphqlFetchClient (url, init, query, variables, operati
       }
     })
     .catch(error => onError(error))
+
+  // Return a function to abort the fetch.
+  return () => {
+    abortController.abort()
+  }
 }

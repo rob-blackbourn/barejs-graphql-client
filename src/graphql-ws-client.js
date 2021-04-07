@@ -1,4 +1,5 @@
 import FetchError from './fetch-error'
+import mergeDeep from './merge-deep'
 import graphqlWsSubscriber from './graphql-ws-subscriber'
 
 /**
@@ -15,18 +16,22 @@ import graphqlWsSubscriber from './graphql-ws-subscriber'
  */
 export default function graphqlWsClient (url, init, query, variables, operationName, onNext, onError, onComplete) {
   const abortController = new AbortController()
-
-  // Invoke fetch as a POST with the GraphQL content in the body.
-  fetch(url, {
+  init = mergeDeep({
     method: 'POST',
-    signal: abortController.signal,
+    headers: {
+      'content-type': 'application/json',
+      accept: 'application/json'
+    },
     body: JSON.stringify({
       query,
       variables,
       operationName
     }),
-    ...init
-  })
+    signal: abortController.signal
+  }, init)
+
+  // Invoke fetch as a POST with the GraphQL content in the body.
+  fetch(url, init)
     .then(response => {
       if (response.status === 200) {
         // A 200 response is from a query or mutation.
