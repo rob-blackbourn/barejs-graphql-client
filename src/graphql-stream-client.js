@@ -62,9 +62,11 @@ function makeLineDecoder () {
  */
 export default function graphqlStreamClient (url, init, query, variables, operationName, onNext, onError, onComplete) {
   const abortController = new AbortController()
+  const method = init.method || 'POST'
   init = mergeDeep({
-    method: 'POST',
+    method,
     headers: {
+      allow: method,
       'content-type': 'application/json',
       accept: 'application/json'
     },
