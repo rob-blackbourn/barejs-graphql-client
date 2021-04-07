@@ -19,6 +19,25 @@ class FetchError extends Error {
   }
 }
 
+function isObject(item) {
+    return item && typeof item === "object" && !Array.isArray(item)
+  }
+  
+  function mergeDeep(target, source) {
+    let output = Object.assign({}, target);
+    if (isObject(target) && isObject(source)) {
+      Object.keys(source).forEach((key) => {
+        if (isObject(source[key])) {
+          if (!(key in target)) Object.assign(output, { [key]: source[key] });
+          else output[key] = mergeDeep(target[key], source[key]);
+        } else {
+          Object.assign(output, { [key]: source[key] });
+        }
+      });
+    }
+    return output
+  }
+
 /**
  * Create a graphQL client that can be used for Query, Mutation and Subscription, using server sent events.
  * @param {string} url - The url to target.
@@ -34,17 +53,23 @@ class FetchError extends Error {
 function graphqlEventSourceClient (url, init, query, variables, operationName, onNext, onError, onComplete) {
   const abortController = new AbortController();
 
-  // Invoke fetch as a POST with the GraphQL content in the body.
-  fetch(url, {
+  init = mergeDeep({
     method: 'POST',
+    headers: {
+      allow: method,
+      'content-type': 'application/json',
+      accept: 'application/json'
+    },
     signal: abortController.signal,
     body: JSON.stringify({
       query,
       variables,
       operationName
-    }),
-    ...init
-  })
+    })
+  }, init);
+
+  // Invoke fetch as a POST with the GraphQL content in the body.
+  fetch(url, init)
     .then(response => {
       if (response.status === 200) {
         // A 200 response is from a query or mutation.
@@ -141,17 +166,25 @@ function graphqlEventSourceSubscriber (url, query, variables, operationName, onN
  * @param {string} [operationName] - The name of the operation to invoke.
  * @param {function} onError - The function called when an error has occurred.
  * @param {function} onSuccess - The function called when the query has been successfully invoked.
+ * @returns {function} - A function that can be called to terminate the operation.
  */
 function graphqlFetchClient (url, init, query, variables, operationName, onError, onSuccess) {
-  fetch(url, {
+  const abortController = new AbortController();
+  init = mergeDeep({
     method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      accept: 'application/json'
+    },
     body: JSON.stringify({
       query,
       variables,
       operationName
     }),
-    ...init
-  })
+    signal: abortController.signal,
+  }, init);
+
+  fetch(url, init)
     .then(response => {
       if (response.ok) {
         response.json()
@@ -164,6 +197,11 @@ function graphqlFetchClient (url, init, query, variables, operationName, onError
       }
     })
     .catch(error => onError(error));
+
+  // Return a function to abort the fetch.
+  return () => {
+    abortController.abort();
+  }
 }
 
 function makeWriteableStream (onNext, onError, onComplete) {
@@ -227,25 +265,22 @@ function makeLineDecoder () {
  * @returns {function} - A function that can be called to terminate the operation.
  */
 function graphqlStreamClient (url, init, query, variables, operationName, onNext, onError, onComplete) {
-  const body = JSON.stringify({
-    query, variables, operationName
-  });
-  const method = 'POST';
   const abortController = new AbortController();
-
-  fetch(url, {
-    method,
-    headers: new Headers({
-      allow: method,
+  init = mergeDeep({
+    method: 'POST',
+    headers: {
       'content-type': 'application/json',
-      accept: 'application/json',
-      ...(init || {}).headers
+      accept: 'application/json'
+    },
+    body: JSON.stringify({
+      query,
+      variables,
+      operationName
     }),
-    mode: 'cors',
-    body,
-    signal: abortController.signal,
-    ...init
-  })
+    signal: abortController.signal
+  }, init);
+
+  fetch(url, init)
     .then(response => {
       if (response.status === 200) {
         // A streaming response is a subscription.
@@ -513,18 +548,22 @@ function graphqlWsSubscriber (url, query, variables, operationName, onNext, onEr
  */
 function graphqlWsClient (url, init, query, variables, operationName, onNext, onError, onComplete) {
   const abortController = new AbortController();
-
-  // Invoke fetch as a POST with the GraphQL content in the body.
-  fetch(url, {
+  init = mergeDeep({
     method: 'POST',
-    signal: abortController.signal,
+    headers: {
+      'content-type': 'application/json',
+      accept: 'application/json'
+    },
     body: JSON.stringify({
       query,
       variables,
       operationName
     }),
-    ...init
-  })
+    signal: abortController.signal
+  }, init);
+
+  // Invoke fetch as a POST with the GraphQL content in the body.
+  fetch(url, init)
     .then(response => {
       if (response.status === 200) {
         // A 200 response is from a query or mutation.
