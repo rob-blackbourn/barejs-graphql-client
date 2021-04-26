@@ -100,7 +100,7 @@ export default function graphqlStreamClient (url, init, query, variables, operat
             // Errors are handled in the writeable stream
           })
       } else {
-        onError(new Error('Unhandled response'))
+        onError(new FetchError(response, 'Failed to execute GraphQL'))
       }
     })
     .catch(error => {
