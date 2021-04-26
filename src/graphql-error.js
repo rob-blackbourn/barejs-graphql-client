@@ -14,6 +14,7 @@ export default class GraphQLError extends Error {
       Error.captureStackTrace(this, GraphQLError)
     }
 
+    this.name = 'GraphQLError'
     this.details = details
   }
 }

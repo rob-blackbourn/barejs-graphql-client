@@ -1,7 +1,7 @@
 {
   "name": "@barejs/graphql-client",
   "private": false,
-  "version": "5.0.7",
+  "version": "5.0.8",
   "description": "GraphQL clients for the Python bareASGI web toolkit",
   "keywords": [
     "graphql",
