@@ -1,3 +1,4 @@
+import FetchError from './fetch-error'
 import mergeDeep from './merge-deep'
 
 function makeWriteableStream (onNext, onError, onComplete) {
