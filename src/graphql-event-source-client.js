@@ -13,23 +13,35 @@ import mergeDeep from './merge-deep'
  * @param {function} onComplete - Called when the operation is complete.
  * @returns {function} - A function that can be called to terminate the operation.
  */
-export default function graphqlEventSourceClient (url, init, query, variables, operationName, onNext, onError, onComplete) {
+export default function graphqlEventSourceClient(
+  url,
+  init,
+  query,
+  variables,
+  operationName,
+  onNext,
+  onError,
+  onComplete
+) {
   const abortController = new AbortController()
 
-  init = mergeDeep({
-    method: 'POST',
-    headers: {
-      allow: method,
-      'content-type': 'application/json',
-      accept: 'application/json'
+  init = mergeDeep(
+    {
+      method: 'POST',
+      headers: {
+        allow: 'GET',
+        'content-type': 'application/json',
+        accept: 'application/json'
+      },
+      signal: abortController.signal,
+      body: JSON.stringify({
+        query,
+        variables,
+        operationName
+      })
     },
-    signal: abortController.signal,
-    body: JSON.stringify({
-      query,
-      variables,
-      operationName
-    })
-  }, init)
+    init
+  )
 
   // Invoke fetch as a POST with the GraphQL content in the body.
   fetch(url, init)
@@ -37,7 +49,8 @@ export default function graphqlEventSourceClient (url, init, query, variables, o
       if (response.status === 200) {
         // A 200 response is from a query or mutation.
 
-        response.json()
+        response
+          .json()
           .then(json => {
             onNext(json)
             onComplete()

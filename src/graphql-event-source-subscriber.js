@@ -9,10 +9,19 @@
  * @param {function} onComplete - Called when the operation has completed.
  * @returns {function} - A function which can be called to terminate the operation.
  */
-export default function graphqlEventSourceSubscriber (url, query, variables, operationName, onNext, onError, onComplete) {
+export default function graphqlEventSourceSubscriber(
+  url,
+  query,
+  variables,
+  operationName,
+  onNext,
+  onError,
+  onComplete
+) {
   let subscriptionUrl = url + '?query=' + encodeURIComponent(query)
   if (variables) {
-    subscriptionUrl += '&variables=' + encodeURIComponent(JSON.stringify(variables))
+    subscriptionUrl +=
+      '&variables=' + encodeURIComponent(JSON.stringify(variables))
   }
   if (operationName) {
     subscriptionUrl += '&operationName=' + encodeURIComponent(operationName)

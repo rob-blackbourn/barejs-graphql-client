@@ -7,7 +7,7 @@ export default class EventError extends Error {
    * @param {Event} event - The event that caused the error.
    * @param  {...any} params - Any other error params.
    */
-  constructor (event, ...params) {
+  constructor(event, ...params) {
     super(...params)
 
     if (Error.captureStackTrace) {

@@ -12,26 +12,38 @@ import mergeDeep from './merge-deep'
  * @param {function} onSuccess - The function called when the query has been successfully invoked.
  * @returns {function} - A function that can be called to terminate the operation.
  */
-export default function graphqlFetchClient (url, init, query, variables, operationName, onError, onSuccess) {
+export default function graphqlFetchClient(
+  url,
+  init,
+  query,
+  variables,
+  operationName,
+  onError,
+  onSuccess
+) {
   const abortController = new AbortController()
-  init = mergeDeep({
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      accept: 'application/json'
+  init = mergeDeep(
+    {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        accept: 'application/json'
+      },
+      body: JSON.stringify({
+        query,
+        variables,
+        operationName
+      }),
+      signal: abortController.signal
     },
-    body: JSON.stringify({
-      query,
-      variables,
-      operationName
-    }),
-    signal: abortController.signal,
-  }, init)
+    init
+  )
 
   fetch(url, init)
     .then(response => {
       if (response.ok) {
-        response.json()
+        response
+          .json()
           .then(json => {
             onSuccess(json)
           })

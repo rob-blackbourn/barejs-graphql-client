@@ -1,14 +1,16 @@
+/* global TransformStream */
+
 import mergeDeep from './merge-deep'
 
-function makeWriteableStream (onNext, onError, onComplete) {
+function makeWriteableStream(onNext, onError, onComplete) {
   return new WritableStream({
-    write (chunk, controller) {
+    write(chunk, controller) {
       onNext(chunk)
     },
-    close (controller) {
+    close(controller) {
       onComplete()
     },
-    abort (reason) {
+    abort(reason) {
       if (reason.name === 'AbortError') {
         onComplete()
       } else {
@@ -18,14 +20,14 @@ function makeWriteableStream (onNext, onError, onComplete) {
   })
 }
 
-function makeLineDecoder () {
+function makeLineDecoder() {
   // eslint-disable-next-line no-undef
   return new TransformStream({
-    start (controller) {
+    start(controller) {
       controller.buf = ''
       controller.pos = 0
     },
-    transform (chunk, controller) {
+    transform(chunk, controller) {
       controller.buf += chunk
       while (controller.pos < controller.buf.length) {
         if (controller.buf[controller.pos] === '\n') {
@@ -40,7 +42,7 @@ function makeLineDecoder () {
         }
       }
     },
-    flush (controller) {
+    flush(controller) {
       if (controller.pos !== 0) {
         controller.enqueue(controller.buf)
       }
@@ -60,21 +62,35 @@ function makeLineDecoder () {
  * @param {function} onComplete - The function called when the operation has completed.
  * @returns {function} - A function that can be called to terminate the operation.
  */
-export default function graphqlStreamClient (url, init, query, variables, operationName, onNext, onError, onComplete) {
+export default function graphqlStreamClient(
+  url,
+  init,
+  query,
+  variables,
+  operationName,
+  onNext,
+  onError,
+  onComplete
+) {
   const abortController = new AbortController()
-  init = mergeDeep({
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      accept: 'application/json'
+
+  init = mergeDeep(
+    {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        accept: 'application/json',
+        allow: 'POST'
+      },
+      body: JSON.stringify({
+        query,
+        variables,
+        operationName
+      }),
+      signal: abortController.signal
     },
-    body: JSON.stringify({
-      query,
-      variables,
-      operationName
-    }),
-    signal: abortController.signal
-  }, init)
+    init
+  )
 
   fetch(url, init)
     .then(response => {
@@ -84,15 +100,17 @@ export default function graphqlStreamClient (url, init, query, variables, operat
         const writeableStream = makeWriteableStream(onNext, onError, onComplete)
 
         response.body
-        // eslint-disable-next-line no-undef
+          // eslint-disable-next-line no-undef
           .pipeThrough(new TextDecoderStream())
           .pipeThrough(lineDecoder)
           // eslint-disable-next-line no-undef
-          .pipeThrough(new TransformStream({
-            transform (chunk, controller) {
-              controller.enqueue(JSON.parse(chunk))
-            }
-          }))
+          .pipeThrough(
+            new TransformStream({
+              transform(chunk, controller) {
+                controller.enqueue(JSON.parse(chunk))
+              }
+            })
+          )
           .pipeTo(writeableStream)
           .catch(() => {
             // Errors are handled in the writeable stream

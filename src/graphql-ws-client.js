@@ -14,21 +14,33 @@ import graphqlWsSubscriber from './graphql-ws-subscriber'
  * @param {function} onComplete - The function called when the operation has completed.
  * @returns {function} - A function that can be called to terminate the operation.
  */
-export default function graphqlWsClient (url, init, query, variables, operationName, onNext, onError, onComplete) {
+export default function graphqlWsClient(
+  url,
+  init,
+  query,
+  variables,
+  operationName,
+  onNext,
+  onError,
+  onComplete
+) {
   const abortController = new AbortController()
-  init = mergeDeep({
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      accept: 'application/json'
+  init = mergeDeep(
+    {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        accept: 'application/json'
+      },
+      body: JSON.stringify({
+        query,
+        variables,
+        operationName
+      }),
+      signal: abortController.signal
     },
-    body: JSON.stringify({
-      query,
-      variables,
-      operationName
-    }),
-    signal: abortController.signal
-  }, init)
+    init
+  )
 
   // Invoke fetch as a POST with the GraphQL content in the body.
   fetch(url, init)
@@ -36,7 +48,8 @@ export default function graphqlWsClient (url, init, query, variables, operationN
       if (response.status === 200) {
         // A 200 response is from a query or mutation.
 
-        response.json()
+        response
+          .json()
           .then(json => {
             onNext(json)
             onComplete()
@@ -50,7 +63,15 @@ export default function graphqlWsClient (url, init, query, variables, operationN
         const index = location.indexOf('?')
         const wsUrl = 'ws' + location.slice(4, index === -1 ? undefined : index)
 
-        const unsubscribe = graphqlWsSubscriber(wsUrl, query, variables, operationName, onNext, onError, onComplete)
+        const unsubscribe = graphqlWsSubscriber(
+          wsUrl,
+          query,
+          variables,
+          operationName,
+          onNext,
+          onError,
+          onComplete
+        )
 
         abortController.signal.onabort = () => {
           unsubscribe()

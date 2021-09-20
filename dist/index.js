@@ -7,7 +7,7 @@ class FetchError extends Error {
    * @param {Response} response - The fetch response.
    * @param  {...any} params - Any other Error params.
    */
-  constructor (response, ...params) {
+  constructor(response, ...params) {
     super(...params);
 
     if (Error.captureStackTrace) {
@@ -20,13 +20,13 @@ class FetchError extends Error {
 }
 
 function isObject(item) {
-    return item && typeof item === "object" && !Array.isArray(item)
-  }
-  
+  return item && typeof item === 'object' && item.constructor === Object
+}
+
 function mergeDeep(target, source) {
   let output = Object.assign({}, target);
   if (isObject(target) && isObject(source)) {
-    Object.keys(source).forEach((key) => {
+    Object.keys(source).forEach(key => {
       if (isObject(source[key])) {
         if (!(key in target)) Object.assign(output, { [key]: source[key] });
         else output[key] = mergeDeep(target[key], source[key]);
@@ -50,23 +50,35 @@ function mergeDeep(target, source) {
  * @param {function} onComplete - Called when the operation is complete.
  * @returns {function} - A function that can be called to terminate the operation.
  */
-function graphqlEventSourceClient (url, init, query, variables, operationName, onNext, onError, onComplete) {
+function graphqlEventSourceClient(
+  url,
+  init,
+  query,
+  variables,
+  operationName,
+  onNext,
+  onError,
+  onComplete
+) {
   const abortController = new AbortController();
 
-  init = mergeDeep({
-    method: 'POST',
-    headers: {
-      allow: method,
-      'content-type': 'application/json',
-      accept: 'application/json'
+  init = mergeDeep(
+    {
+      method: 'POST',
+      headers: {
+        allow: 'GET',
+        'content-type': 'application/json',
+        accept: 'application/json'
+      },
+      signal: abortController.signal,
+      body: JSON.stringify({
+        query,
+        variables,
+        operationName
+      })
     },
-    signal: abortController.signal,
-    body: JSON.stringify({
-      query,
-      variables,
-      operationName
-    })
-  }, init);
+    init
+  );
 
   // Invoke fetch as a POST with the GraphQL content in the body.
   fetch(url, init)
@@ -74,7 +86,8 @@ function graphqlEventSourceClient (url, init, query, variables, operationName, o
       if (response.status === 200) {
         // A 200 response is from a query or mutation.
 
-        response.json()
+        response
+          .json()
           .then(json => {
             onNext(json);
             onComplete();
@@ -126,10 +139,19 @@ function graphqlEventSourceClient (url, init, query, variables, operationName, o
  * @param {function} onComplete - Called when the operation has completed.
  * @returns {function} - A function which can be called to terminate the operation.
  */
-function graphqlEventSourceSubscriber (url, query, variables, operationName, onNext, onError, onComplete) {
+function graphqlEventSourceSubscriber(
+  url,
+  query,
+  variables,
+  operationName,
+  onNext,
+  onError,
+  onComplete
+) {
   let subscriptionUrl = url + '?query=' + encodeURIComponent(query);
   if (variables) {
-    subscriptionUrl += '&variables=' + encodeURIComponent(JSON.stringify(variables));
+    subscriptionUrl +=
+      '&variables=' + encodeURIComponent(JSON.stringify(variables));
   }
   if (operationName) {
     subscriptionUrl += '&operationName=' + encodeURIComponent(operationName);
@@ -168,26 +190,38 @@ function graphqlEventSourceSubscriber (url, query, variables, operationName, onN
  * @param {function} onSuccess - The function called when the query has been successfully invoked.
  * @returns {function} - A function that can be called to terminate the operation.
  */
-function graphqlFetchClient (url, init, query, variables, operationName, onError, onSuccess) {
+function graphqlFetchClient(
+  url,
+  init,
+  query,
+  variables,
+  operationName,
+  onError,
+  onSuccess
+) {
   const abortController = new AbortController();
-  init = mergeDeep({
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      accept: 'application/json'
+  init = mergeDeep(
+    {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        accept: 'application/json'
+      },
+      body: JSON.stringify({
+        query,
+        variables,
+        operationName
+      }),
+      signal: abortController.signal
     },
-    body: JSON.stringify({
-      query,
-      variables,
-      operationName
-    }),
-    signal: abortController.signal,
-  }, init);
+    init
+  );
 
   fetch(url, init)
     .then(response => {
       if (response.ok) {
-        response.json()
+        response
+          .json()
           .then(json => {
             onSuccess(json);
           })
@@ -204,15 +238,17 @@ function graphqlFetchClient (url, init, query, variables, operationName, onError
   }
 }
 
-function makeWriteableStream (onNext, onError, onComplete) {
+/* global TransformStream */
+
+function makeWriteableStream(onNext, onError, onComplete) {
   return new WritableStream({
-    write (chunk, controller) {
+    write(chunk, controller) {
       onNext(chunk);
     },
-    close (controller) {
+    close(controller) {
       onComplete();
     },
-    abort (reason) {
+    abort(reason) {
       if (reason.name === 'AbortError') {
         onComplete();
       } else {
@@ -222,14 +258,14 @@ function makeWriteableStream (onNext, onError, onComplete) {
   })
 }
 
-function makeLineDecoder () {
+function makeLineDecoder() {
   // eslint-disable-next-line no-undef
   return new TransformStream({
-    start (controller) {
+    start(controller) {
       controller.buf = '';
       controller.pos = 0;
     },
-    transform (chunk, controller) {
+    transform(chunk, controller) {
       controller.buf += chunk;
       while (controller.pos < controller.buf.length) {
         if (controller.buf[controller.pos] === '\n') {
@@ -244,7 +280,7 @@ function makeLineDecoder () {
         }
       }
     },
-    flush (controller) {
+    flush(controller) {
       if (controller.pos !== 0) {
         controller.enqueue(controller.buf);
       }
@@ -264,21 +300,35 @@ function makeLineDecoder () {
  * @param {function} onComplete - The function called when the operation has completed.
  * @returns {function} - A function that can be called to terminate the operation.
  */
-function graphqlStreamClient (url, init, query, variables, operationName, onNext, onError, onComplete) {
+function graphqlStreamClient(
+  url,
+  init,
+  query,
+  variables,
+  operationName,
+  onNext,
+  onError,
+  onComplete
+) {
   const abortController = new AbortController();
-  init = mergeDeep({
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      accept: 'application/json'
+
+  init = mergeDeep(
+    {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        accept: 'application/json',
+        allow: 'POST'
+      },
+      body: JSON.stringify({
+        query,
+        variables,
+        operationName
+      }),
+      signal: abortController.signal
     },
-    body: JSON.stringify({
-      query,
-      variables,
-      operationName
-    }),
-    signal: abortController.signal
-  }, init);
+    init
+  );
 
   fetch(url, init)
     .then(response => {
@@ -288,15 +338,17 @@ function graphqlStreamClient (url, init, query, variables, operationName, onNext
         const writeableStream = makeWriteableStream(onNext, onError, onComplete);
 
         response.body
-        // eslint-disable-next-line no-undef
+          // eslint-disable-next-line no-undef
           .pipeThrough(new TextDecoderStream())
           .pipeThrough(lineDecoder)
           // eslint-disable-next-line no-undef
-          .pipeThrough(new TransformStream({
-            transform (chunk, controller) {
-              controller.enqueue(JSON.parse(chunk));
-            }
-          }))
+          .pipeThrough(
+            new TransformStream({
+              transform(chunk, controller) {
+                controller.enqueue(JSON.parse(chunk));
+              }
+            })
+          )
           .pipeTo(writeableStream)
           .catch(() => {
             // Errors are handled in the writeable stream
@@ -322,14 +374,14 @@ class GraphQLError extends Error {
    * @param {any} details - The error details.
    * @param  {...any} params - Any other Error params.
    */
-  constructor (details, ...params) {
+  constructor(details, ...params) {
     super(...params);
 
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, GraphQLError);
     }
 
-    this.details = details;
+    Object.assign(this, details);
   }
 }
 
@@ -342,7 +394,7 @@ class EventError extends Error {
    * @param {Event} event - The event that caused the error.
    * @param  {...any} params - Any other error params.
    */
-  constructor (event, ...params) {
+  constructor(event, ...params) {
     super(...params);
 
     if (Error.captureStackTrace) {
@@ -367,7 +419,7 @@ const GQL = {
 };
 
 class Subscriber {
-  constructor (url, options, callback, protocols = 'graphql-ws') {
+  constructor(url, options, callback, protocols = 'graphql-ws') {
     this.callback = callback;
 
     this.nextId = 1;
@@ -376,17 +428,24 @@ class Subscriber {
 
     this.webSocket.onopen = event => {
       // Initiate the connection
-      this.webSocket.send(JSON.stringify({
-        type: GQL.CONNECTION_INIT,
-        payload: options
-      }));
+      this.webSocket.send(
+        JSON.stringify({
+          type: GQL.CONNECTION_INIT,
+          payload: options
+        })
+      );
     };
 
     this.webSocket.onclose = event => {
       // The code 1000 (Normal Closure) is special, and results in no error or payload.
-      const error = event.code === 1000 || event.code === 1005 ? null : new EventError(event);
-      // Notify the subscriber.
-      this.callback(error);
+      const error =
+        event.code === 1000 || event.code === 1005
+          ? null
+          : new EventError(event);
+
+      // Notify this subscriber.
+      this.callback(error, null);
+
       // Notify the subscriptions.
       const callbacks = Array.from(this.subscriptions.values());
       this.subscriptions.clear();
@@ -398,35 +457,41 @@ class Subscriber {
     this.webSocket.onmessage = this.onMessage.bind(this);
   }
 
-  subscribe (query, variables, operationName, callback) {
+  subscribe(query, variables, operationName, callback) {
     const id = (this.nextId++).toString();
     this.subscriptions.set(id, callback);
 
-    this.webSocket.send(JSON.stringify({
-      type: GQL.START,
-      id,
-      payload: { query, variables, operationName }
-    }));
+    this.webSocket.send(
+      JSON.stringify({
+        type: GQL.START,
+        id,
+        payload: { query, variables, operationName }
+      })
+    );
 
     // Return the unsubscriber.
     return () => {
       this.subscriptions.delete(id);
 
-      this.webSocket.send(JSON.stringify({
-        type: GQL.STOP,
-        id
-      }));
+      this.webSocket.send(
+        JSON.stringify({
+          type: GQL.STOP,
+          id
+        })
+      );
     }
   }
 
-  shutdown () {
-    this.webSocket.send(JSON.stringify({
-      type: GQL.CONNECTION_TERMINATE
-    }));
+  shutdown() {
+    this.webSocket.send(
+      JSON.stringify({
+        type: GQL.CONNECTION_TERMINATE
+      })
+    );
     this.webSocket.close();
   }
 
-  onMessage (event) {
+  onMessage(event) {
     const data = JSON.parse(event.data);
 
     switch (data.type) {
@@ -456,8 +521,13 @@ class Subscriber {
         // This message is sent after GQL.START to transfer the result of the GraphQL subscription.
         const callback = this.subscriptions.get(data.id);
         if (callback) {
-          const error = data.payload.errors ? new GraphQLError(data.payload.errors) : null;
-          callback(error, data.payload.data);
+          const response = {
+            data: data.payload.data,
+            errors: data.payload.errors
+              ? data.payload.errors.map(error => new GraphQLError(error))
+              : null
+          };
+          callback(null, response);
         }
         break
       }
@@ -480,6 +550,9 @@ class Subscriber {
         }
         break
       }
+      default: {
+        console.error(new Error('unhandled state'));
+      }
     }
   }
 }
@@ -495,34 +568,43 @@ class Subscriber {
  * @param {function} onComplete - The function called when the operation has completed.
  * @returns {function} - A function that can be called to terminate the operation.
  */
-function graphqlWsSubscriber (url, query, variables, operationName, onNext, onError, onComplete) {
+function graphqlWsSubscriber(
+  url,
+  query,
+  variables,
+  operationName,
+  onNext,
+  onError,
+  onComplete
+) {
   let unsubscribe = null;
 
   const subscriber = new Subscriber(
     url,
     {},
     (error, subscribe) => {
-      if (!(error || subscribe)) {
-        // Normal closure.
-        onComplete();
-      } else if (error) {
+      if (error) {
         onError(error);
+      } else if (!subscribe) {
+        onComplete();
       } else {
         unsubscribe = subscribe(
           query,
           variables,
           operationName,
-          (errors, data) => {
-            if (!(errors || subscribe)) {
+          (error, response) => {
+            if (!subscribe) {
               // Normal closure
               onComplete();
             } else {
-              onNext({ data, errors });
+              onNext(response);
             }
-          });
+          }
+        );
       }
     },
-    'graphql-ws');
+    'graphql-ws'
+  );
 
   const shutdown = subscriber.shutdown.bind(subscriber);
 
@@ -546,21 +628,33 @@ function graphqlWsSubscriber (url, query, variables, operationName, onNext, onEr
  * @param {function} onComplete - The function called when the operation has completed.
  * @returns {function} - A function that can be called to terminate the operation.
  */
-function graphqlWsClient (url, init, query, variables, operationName, onNext, onError, onComplete) {
+function graphqlWsClient(
+  url,
+  init,
+  query,
+  variables,
+  operationName,
+  onNext,
+  onError,
+  onComplete
+) {
   const abortController = new AbortController();
-  init = mergeDeep({
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      accept: 'application/json'
+  init = mergeDeep(
+    {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        accept: 'application/json'
+      },
+      body: JSON.stringify({
+        query,
+        variables,
+        operationName
+      }),
+      signal: abortController.signal
     },
-    body: JSON.stringify({
-      query,
-      variables,
-      operationName
-    }),
-    signal: abortController.signal
-  }, init);
+    init
+  );
 
   // Invoke fetch as a POST with the GraphQL content in the body.
   fetch(url, init)
@@ -568,7 +662,8 @@ function graphqlWsClient (url, init, query, variables, operationName, onNext, on
       if (response.status === 200) {
         // A 200 response is from a query or mutation.
 
-        response.json()
+        response
+          .json()
           .then(json => {
             onNext(json);
             onComplete();
@@ -582,7 +677,15 @@ function graphqlWsClient (url, init, query, variables, operationName, onNext, on
         const index = location.indexOf('?');
         const wsUrl = 'ws' + location.slice(4, index === -1 ? undefined : index);
 
-        const unsubscribe = graphqlWsSubscriber(wsUrl, query, variables, operationName, onNext, onError, onComplete);
+        const unsubscribe = graphqlWsSubscriber(
+          wsUrl,
+          query,
+          variables,
+          operationName,
+          onNext,
+          onError,
+          onComplete
+        );
 
         abortController.signal.onabort = () => {
           unsubscribe();

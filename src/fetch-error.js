@@ -7,7 +7,7 @@ export default class FetchError extends Error {
    * @param {Response} response - The fetch response.
    * @param  {...any} params - Any other Error params.
    */
-  constructor (response, ...params) {
+  constructor(response, ...params) {
     super(...params)
 
     if (Error.captureStackTrace) {
