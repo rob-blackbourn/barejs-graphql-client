@@ -1,5 +1,6 @@
 /* global TransformStream */
 
+import FetchError from './fetch-error'
 import mergeDeep from './merge-deep'
 
 function makeWriteableStream(onNext, onError, onComplete) {
@@ -116,7 +117,7 @@ export default function graphqlStreamClient(
             // Errors are handled in the writeable stream
           })
       } else {
-        onError(new Error('Unhandled response'))
+        onError(new FetchError(response, 'Unhandled response'))
       }
     })
     .catch(error => {

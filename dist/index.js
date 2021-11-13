@@ -394,7 +394,7 @@ function graphqlStreamClient(
             // Errors are handled in the writeable stream
           });
       } else {
-        onError(new Error('Unhandled response'));
+        onError(new FetchError(response, 'Unhandled response'));
       }
     })
     .catch(error => {
