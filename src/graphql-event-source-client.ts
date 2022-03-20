@@ -62,6 +62,9 @@ export default function graphqlEventSourceClient(
 
         // The url for the event source is passed in the 'location' header.
         const location = response.headers.get('location')
+        if (location == null) {
+          throw new Error('Location header missing')
+        }
 
         const eventSource = new EventSource(location)
 

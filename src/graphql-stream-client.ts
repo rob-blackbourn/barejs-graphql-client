@@ -105,7 +105,7 @@ export default function graphqlStreamClient(
 
   fetch(url, init)
     .then(response => {
-      if (response.status === 200) {
+      if (response.status === 200 && response.body !== null) {
         // A streaming response is a subscription.
         const lineDecoder = makeLineDecoder()
         const writeableStream = makeWriteableStream(onNext, onError, onComplete)

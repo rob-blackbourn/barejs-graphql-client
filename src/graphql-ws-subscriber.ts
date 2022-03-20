@@ -16,7 +16,7 @@ const GQL = {
 
 type Callback = (error: Error | null, response: any | null) => void
 type UnsubscribeCallback = () => void
-type SubscribeCallback = (query: string, variables: object, operationName: string|null, callback) => UnsubscribeCallback
+type SubscribeCallback = (query: string, variables: object, operationName: string|null, callback: Callback) => UnsubscribeCallback
 type SubscriberCallback = (error: Error| null, subscriber: SubscribeCallback|null) => void
 
 class Subscriber {
@@ -130,7 +130,7 @@ class Subscriber {
           const response = {
             data: data.payload.data,
             errors: data.payload.errors
-              ? data.payload.errors.map(error => new GraphQLError(error))
+              ? data.payload.errors.map((error: string) => new GraphQLError(error))
               : null
           }
           callback(null, response)
@@ -184,7 +184,7 @@ export default function graphqlWsSubscriber(
   onError: (error: Error) => void,
   onComplete: () => void
 ): () => void {
-  let unsubscribe: () => void | null = null
+  let unsubscribe: UnsubscribeCallback | null = null
 
   const subscriber = new Subscriber(
     url,

@@ -60,6 +60,9 @@ export default function graphqlWsClient(
 
         // The url for the event source is passed in the 'location' header.
         const location = response.headers.get('location')
+        if (location == null) {
+          throw new Error('Location header not found')
+        }
         const index = location.indexOf('?')
         const wsUrl = 'ws' + location.slice(4, index === -1 ? undefined : index)
 
