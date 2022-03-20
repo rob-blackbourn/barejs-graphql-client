@@ -15,15 +15,15 @@ import graphqlWsSubscriber from './graphql-ws-subscriber'
  * @returns {function} - A function that can be called to terminate the operation.
  */
 export default function graphqlWsClient(
-  url,
-  init,
-  query,
-  variables,
-  operationName,
-  onNext,
-  onError,
-  onComplete
-) {
+  url: string,
+  init: object,
+  query: string,
+  variables: object,
+  operationName: string | null,
+  onNext: (response: any) => void,
+  onError: (error: Error) => void,
+  onComplete: () => void
+): () => void {
   const abortController = new AbortController()
   init = mergeDeep(
     {

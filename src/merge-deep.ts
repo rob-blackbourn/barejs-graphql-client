@@ -1,8 +1,8 @@
-export function isObject(item) {
+export function isObject(item: any): boolean {
   return item && typeof item === 'object' && item.constructor === Object
 }
 
-export default function mergeDeep(target, source) {
+export default function mergeDeep(target: any, source: any): any {
   let output = Object.assign({}, target)
   if (isObject(target) && isObject(source)) {
     Object.keys(source).forEach(key => {

@@ -13,13 +13,13 @@ import mergeDeep from './merge-deep'
  * @returns {function} - A function that can be called to terminate the operation.
  */
 export default function graphqlFetchClient(
-  url,
-  init,
-  query,
-  variables,
-  operationName,
-  onError,
-  onSuccess
+  url: string,
+  init: object,
+  query: string,
+  variables: object,
+  operationName: string | null,
+  onError: (error: Error) => void,
+  onSuccess: (response: any) => void
 ) {
   const abortController = new AbortController()
   init = mergeDeep(

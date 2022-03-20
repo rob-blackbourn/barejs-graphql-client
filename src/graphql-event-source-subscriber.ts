@@ -1,3 +1,5 @@
+import EventError from "./event-error"
+
 /**
  * A GraphQL subscription client using server sen events.
  * @param {string} url - The GraphQL url.
@@ -10,14 +12,14 @@
  * @returns {function} - A function which can be called to terminate the operation.
  */
 export default function graphqlEventSourceSubscriber(
-  url,
-  query,
-  variables,
-  operationName,
-  onNext,
-  onError,
-  onComplete
-) {
+  url: string,
+  query: string,
+  variables: object,
+  operationName: string | null,
+  onNext: (response: any) => void,
+  onError: (error: Error) => void,
+  onComplete: () => void
+): () => void {
   let subscriptionUrl = url + '?query=' + encodeURIComponent(query)
   if (variables) {
     subscriptionUrl +=
@@ -35,7 +37,7 @@ export default function graphqlEventSourceSubscriber(
   }
 
   eventSource.onerror = error => {
-    onError(error)
+    onError(new EventError(error))
   }
 
   const abortController = new AbortController()
