@@ -80,8 +80,8 @@ function mergeDeep(target, source) {
 
 /**
  * Create a graphQL client that can be used for Query, Mutation and Subscription, using server sent events.
- * @param {string} url - The url to target.
- * @param {Object} init - Extra arguments for fetch.
+ * @param {RequestInfo} url - The url to target.
+ * @param {RequestInit} init - Extra arguments for fetch.
  * @param {string} query - The query.
  * @param {Object} [variables] - Query variables.
  * @param {string} [operationName] - The name of the operation to invoke.
@@ -154,7 +154,8 @@ function graphqlEventSourceClient(url, init, query, variables, operationName, on
 
 /**
  * A GraphQL subscription client using server sen events.
- * @param {string} url - The GraphQL url.
+ * @param {string | URL} url - The GraphQL url.
+ * @param {EventSourceInit} init - Configuration passed to the event source.
  * @param {string} query - The GraphQL query.
  * @param {Object} [variables] - Any GraphQL variables.
  * @param {string} [operationName] - The name of the operation to invoke,
@@ -163,7 +164,7 @@ function graphqlEventSourceClient(url, init, query, variables, operationName, on
  * @param {function} onComplete - Called when the operation has completed.
  * @returns {function} - A function which can be called to terminate the operation.
  */
-function graphqlEventSourceSubscriber(url, query, variables, operationName, onNext, onError, onComplete) {
+function graphqlEventSourceSubscriber(url, init, query, variables, operationName, onNext, onError, onComplete) {
     let subscriptionUrl = url + '?query=' + encodeURIComponent(query);
     if (variables) {
         subscriptionUrl +=
@@ -172,7 +173,7 @@ function graphqlEventSourceSubscriber(url, query, variables, operationName, onNe
     if (operationName) {
         subscriptionUrl += '&operationName=' + encodeURIComponent(operationName);
     }
-    const eventSource = new EventSource(subscriptionUrl);
+    const eventSource = new EventSource(subscriptionUrl, init);
     eventSource.onmessage = event => {
         const data = JSON.parse(event.data);
         onNext(data);
@@ -192,8 +193,8 @@ function graphqlEventSourceSubscriber(url, query, variables, operationName, onNe
 
 /**
  * A simple fetch-based GraphQL client. This can handle Query and Mutation.
- * @param {string} url - The GraphQL query endpoint.
- * @param {Object} init - Any additional parameters for fetch.
+ * @param {RequestInfo} url - The GraphQL query endpoint.
+ * @param {RequestInit} init - Any additional parameters for fetch.
  * @param {string} query - The GraphQL query.
  * @param {Object} [variables] - Any GraphQL variables.
  * @param {string} [operationName] - The name of the operation to invoke.
@@ -323,8 +324,8 @@ function makeLineDecoder() {
 }
 /**
  * A GraphQL client using a streaming fetch. This can support Query, Mutation, and Subscription.
- * @param {string} url - The GraphQL url.
- * @param {Object} init - Additional parameters passed to fetch.
+ * @param {RequestInfo} url - The GraphQL url.
+ * @param {RequestInit} init - Additional parameters passed to fetch.
  * @param {string} query - The GraphQL query.
  * @param {Object} [variables] - Any variables required by the query.
  * @param {string} [operationName] - The name of the operation to invoke,
@@ -511,7 +512,7 @@ class Subscriber {
 }
 /**
  * A GraphQL web socket subscriber.
- * @param {string} url - The GraphQL url.
+ * @param {string | URL} url - The GraphQL url.
  * @param {string} query - The GraphQL query.
  * @param {Object} [variables] - Any variables required by the query.
  * @param {string} [operationName] - The name of the operation to invoke,
@@ -552,8 +553,8 @@ function graphqlWsSubscriber(url, query, variables, operationName, onNext, onErr
 
 /**
  * A GraphQL client using web sockets for subscriptions. This can handle Query, Mutation and Subscription.
- * @param {string} url - The GraphQL url.
- * @param {Object} init - Additional parameters passed to fetch.
+ * @param {RequestInfo} url - The GraphQL url.
+ * @param {RequestInit} init - Additional parameters passed to fetch.
  * @param {string} query - The GraphQL query.
  * @param {Object} [variables] - Any variables required by the query.
  * @param {string} [operationName] - The name of the operation to invoke,

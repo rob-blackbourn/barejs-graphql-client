@@ -63,8 +63,8 @@ function makeLineDecoder(): TransformStream {
 
 /**
  * A GraphQL client using a streaming fetch. This can support Query, Mutation, and Subscription.
- * @param {string} url - The GraphQL url.
- * @param {Object} init - Additional parameters passed to fetch.
+ * @param {RequestInfo} url - The GraphQL url.
+ * @param {RequestInit} init - Additional parameters passed to fetch.
  * @param {string} query - The GraphQL query.
  * @param {Object} [variables] - Any variables required by the query.
  * @param {string} [operationName] - The name of the operation to invoke,
@@ -74,8 +74,8 @@ function makeLineDecoder(): TransformStream {
  * @returns {function} - A function that can be called to terminate the operation.
  */
 export default function graphqlStreamClient(
-  url: string,
-  init: object,
+  url: RequestInfo,
+  init: RequestInit,
   query: string,
   variables: object,
   operationName: string | null,

@@ -25,7 +25,7 @@ class Subscriber {
   subscriptions: Map<string,Callback>
   webSocket: WebSocket
 
-  constructor(url: string, options: object, callback: SubscriberCallback, protocols = 'graphql-ws') {
+  constructor(url: string | URL, options: object, callback: SubscriberCallback, protocols: string | string[] = 'graphql-ws') {
     this.callback = callback
 
     this.nextId = 1
@@ -166,7 +166,7 @@ class Subscriber {
 
 /**
  * A GraphQL web socket subscriber.
- * @param {string} url - The GraphQL url.
+ * @param {string | URL} url - The GraphQL url.
  * @param {string} query - The GraphQL query.
  * @param {Object} [variables] - Any variables required by the query.
  * @param {string} [operationName] - The name of the operation to invoke,
@@ -176,7 +176,7 @@ class Subscriber {
  * @returns {function} - A function that can be called to terminate the operation.
  */
 export default function graphqlWsSubscriber(
-  url: string,
+  url: string | URL,
   query: string,
   variables: object,
   operationName: string | null,

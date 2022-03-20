@@ -4,8 +4,8 @@ import mergeDeep from './merge-deep'
 
 /**
  * Create a graphQL client that can be used for Query, Mutation and Subscription, using server sent events.
- * @param {string} url - The url to target.
- * @param {Object} init - Extra arguments for fetch.
+ * @param {RequestInfo} url - The url to target.
+ * @param {RequestInit} init - Extra arguments for fetch.
  * @param {string} query - The query.
  * @param {Object} [variables] - Query variables.
  * @param {string} [operationName] - The name of the operation to invoke.
@@ -15,8 +15,8 @@ import mergeDeep from './merge-deep'
  * @returns {function} - A function that can be called to terminate the operation.
  */
 export default function graphqlEventSourceClient(
-  url: string,
-  init: object,
+  url: RequestInfo,
+  init: RequestInit,
   query: string,
   variables: object,
   operationName: string | null,
