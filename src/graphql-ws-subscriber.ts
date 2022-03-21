@@ -14,8 +14,18 @@ const GQL = {
   COMPLETE: 'complete'
 }
 
+type Callback = (error: Error | null, response: any | null) => void
+type UnsubscribeCallback = () => void
+type SubscribeCallback = (query: string, variables: object, operationName: string|null, callback: Callback) => UnsubscribeCallback
+type SubscriberCallback = (error: Error| null, subscriber: SubscribeCallback|null) => void
+
 class Subscriber {
-  constructor(url, options, callback, protocols = 'graphql-ws') {
+  callback: SubscriberCallback
+  nextId: number
+  subscriptions: Map<string,Callback>
+  webSocket: WebSocket
+
+  constructor(url: string | URL, options: object, callback: SubscriberCallback, protocols: string | string[] = 'graphql-ws') {
     this.callback = callback
 
     this.nextId = 1
@@ -53,7 +63,7 @@ class Subscriber {
     this.webSocket.onmessage = this.onMessage.bind(this)
   }
 
-  subscribe(query, variables, operationName, callback) {
+  subscribe(query: string, variables: object, operationName: string | null, callback: Callback): () => void {
     const id = (this.nextId++).toString()
     this.subscriptions.set(id, callback)
 
@@ -78,7 +88,7 @@ class Subscriber {
     }
   }
 
-  shutdown() {
+  shutdown(): void {
     this.webSocket.send(
       JSON.stringify({
         type: GQL.CONNECTION_TERMINATE
@@ -87,7 +97,7 @@ class Subscriber {
     this.webSocket.close()
   }
 
-  onMessage(event) {
+  onMessage(event: MessageEvent<string>): void {
     const data = JSON.parse(event.data)
 
     switch (data.type) {
@@ -103,7 +113,7 @@ class Subscriber {
         // 1. In response to GQL.CONNECTION_INIT
         // 2. In case of parsing errors in the client which will not disconnect.
         if (this.callback) {
-          this.callback(new GraphQLError(data.payload), this)
+          this.callback(new GraphQLError(data.payload), null)
         }
         break
       }
@@ -120,7 +130,7 @@ class Subscriber {
           const response = {
             data: data.payload.data,
             errors: data.payload.errors
-              ? data.payload.errors.map(error => new GraphQLError(error))
+              ? data.payload.errors.map((error: string) => new GraphQLError(error))
               : null
           }
           callback(null, response)
@@ -153,9 +163,10 @@ class Subscriber {
   }
 }
 
+
 /**
  * A GraphQL web socket subscriber.
- * @param {string} url - The GraphQL url.
+ * @param {string | URL} url - The GraphQL url.
  * @param {string} query - The GraphQL query.
  * @param {Object} [variables] - Any variables required by the query.
  * @param {string} [operationName] - The name of the operation to invoke,
@@ -165,15 +176,15 @@ class Subscriber {
  * @returns {function} - A function that can be called to terminate the operation.
  */
 export default function graphqlWsSubscriber(
-  url,
-  query,
-  variables,
-  operationName,
-  onNext,
-  onError,
-  onComplete
-) {
-  let unsubscribe = null
+  url: string | URL,
+  query: string,
+  variables: object,
+  operationName: string | null,
+  onNext: (response: any) => void,
+  onError: (error: Error) => void,
+  onComplete: () => void
+): () => void {
+  let unsubscribe: UnsubscribeCallback | null = null
 
   const subscriber = new Subscriber(
     url,

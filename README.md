@@ -48,19 +48,58 @@ graphqlFetchClient(
 
 ### Subscriptions
 
-The `graphqlWsSubscriber` can be used for subscriptions.
+There are three mechanisms provided for subscriptions:
+
+* Over WebSockets (widely supported),
+* Using server sent events (only supported by bareASGI)
+* Using readable streams (only supported by bareASGI)
+
+#### WebSockets
+
+This follows the [Apollo websocket protocol](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md),
+which appears to be the most widely used and compatible transport. The main issue with the websocket transport is
+that authentication is must be implemented separately, as headers and cookie are not available.
 
 ```js
 import { graphqlWsSubscriber } from '@barejs/graphql-client'
 
 const url = 'http://www.example.com/sse-subscription'
-const init = {}
 
 const query = 'subscription { someSubscription { someField someOtherField } }'
 const variables = null
 const operationName = null
 
 graphqlWsSubscriber(
+  url,
+  query,
+  variables,
+  operationName,
+  error => console.error(error),
+  data => console.log(data))
+```
+
+The maximum number of web sockets is browser dependent, and is in the order of 30
+per host, and 256 in total.
+
+#### Server Sent Events
+
+This sends the subscription as JSON messages over and `EventSource`. This is
+a widely supported protocol. Under the hood this is implemented as a streaming GET.
+This means things like headers are valid, which allows for consistent authentication.
+
+```js
+import { graphqlEventSourceSubscriber } from '@barejs/graphql-client'
+
+const url = 'http://www.example.com/sse-subscription'
+init = {
+  withCredentials: true // This controls CORS behaviour.
+}
+
+const query = 'subscription { someSubscription { someField someOtherField } }'
+const variables = null
+const operationName = null
+
+graphqlEventSourceSubscriber(
   url,
   init,
   query,
@@ -70,7 +109,47 @@ graphqlWsSubscriber(
   data => console.log(data))
 ```
 
-### Queries, Mutations and Subscriptions
+Under http/1.1 most browsers allow up to 6 concurrent connections per session. This
+is not an issue with http/2 as all http traffic to a host is multiplexed over a
+single connection.
+
+#### Readable Streams
+
+Readable streams are essentially a long running fetch. This means they have similar
+characteristics to server sent events, without the slightly arcane protocol.
+
+The key advantage to this approach is that it works for `query` and `mutation`
+as well as `subscription`. This means everything works from  a single client,
+which is attractive.
+
+```js
+import { graphqlStreamClient } from '@barejs/graphql-client'
+
+const url = 'http://www.example.com/sse-subscription'
+init = {} // Anything the fetch takes.
+
+const query = 'subscription { someSubscription { someField someOtherField } }'
+const variables = null
+const operationName = null
+
+graphqlStreamClient(
+  url,
+  init,
+  query,
+  variables,
+  operationName,
+  error => console.error(error),
+  data => console.log(data))
+```
+
+As with server sent events the 6 connection limitation with http/1.1 is an issue.
+
+### Clients
+
+By using one of the three "client" functions, queries, mutations and subscriptions can
+be handled transparently. For web sockets and server sent events this is achieved by
+the server responding to a subscription with the location of the web socket or SSE
+endpoint. For readable streams, no redirection is necessary.
 
 The `graphqlWsClient` can be used for queries, mutations, or subscriptions when using
 the 

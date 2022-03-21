@@ -1,10 +1,11 @@
+import EventError from './event-error'
 import FetchError from './fetch-error'
 import mergeDeep from './merge-deep'
 
 /**
  * Create a graphQL client that can be used for Query, Mutation and Subscription, using server sent events.
- * @param {string} url - The url to target.
- * @param {Object} init - Extra arguments for fetch.
+ * @param {RequestInfo} url - The url to target.
+ * @param {RequestInit} init - Extra arguments for fetch.
  * @param {string} query - The query.
  * @param {Object} [variables] - Query variables.
  * @param {string} [operationName] - The name of the operation to invoke.
@@ -14,15 +15,15 @@ import mergeDeep from './merge-deep'
  * @returns {function} - A function that can be called to terminate the operation.
  */
 export default function graphqlEventSourceClient(
-  url,
-  init,
-  query,
-  variables,
-  operationName,
-  onNext,
-  onError,
-  onComplete
-) {
+  url: RequestInfo,
+  init: RequestInit,
+  query: string,
+  variables: object,
+  operationName: string | null,
+  onNext: (response: any) => void,
+  onError: (error: Error) => void,
+  onComplete: () => void
+): () => void {
   const abortController = new AbortController()
 
   init = mergeDeep(
@@ -61,6 +62,9 @@ export default function graphqlEventSourceClient(
 
         // The url for the event source is passed in the 'location' header.
         const location = response.headers.get('location')
+        if (location == null) {
+          throw new Error('Location header missing')
+        }
 
         const eventSource = new EventSource(location)
 
@@ -70,7 +74,7 @@ export default function graphqlEventSourceClient(
         }
 
         eventSource.onerror = error => {
-          onError(error)
+          onError(new EventError(error))
         }
 
         abortController.signal.onabort = () => {

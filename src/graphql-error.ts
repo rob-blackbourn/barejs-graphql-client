@@ -7,7 +7,7 @@ export default class GraphQLError extends Error {
    * @param {any} details - The error details.
    * @param  {...any} params - Any other Error params.
    */
-  constructor(details, ...params) {
+  constructor(details: any, ...params: any[]) {
     super(...params)
 
     if (Error.captureStackTrace) {

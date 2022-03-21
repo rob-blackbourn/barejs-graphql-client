@@ -4,8 +4,8 @@ import graphqlWsSubscriber from './graphql-ws-subscriber'
 
 /**
  * A GraphQL client using web sockets for subscriptions. This can handle Query, Mutation and Subscription.
- * @param {string} url - The GraphQL url.
- * @param {Object} init - Additional parameters passed to fetch.
+ * @param {RequestInfo} url - The GraphQL url.
+ * @param {RequestInit} init - Additional parameters passed to fetch.
  * @param {string} query - The GraphQL query.
  * @param {Object} [variables] - Any variables required by the query.
  * @param {string} [operationName] - The name of the operation to invoke,
@@ -15,15 +15,15 @@ import graphqlWsSubscriber from './graphql-ws-subscriber'
  * @returns {function} - A function that can be called to terminate the operation.
  */
 export default function graphqlWsClient(
-  url,
-  init,
-  query,
-  variables,
-  operationName,
-  onNext,
-  onError,
-  onComplete
-) {
+  url: RequestInfo,
+  init: RequestInit,
+  query: string,
+  variables: object,
+  operationName: string | null,
+  onNext: (response: any) => void,
+  onError: (error: Error) => void,
+  onComplete: () => void
+): () => void {
   const abortController = new AbortController()
   init = mergeDeep(
     {
@@ -60,6 +60,9 @@ export default function graphqlWsClient(
 
         // The url for the event source is passed in the 'location' header.
         const location = response.headers.get('location')
+        if (location == null) {
+          throw new Error('Location header not found')
+        }
         const index = location.indexOf('?')
         const wsUrl = 'ws' + location.slice(4, index === -1 ? undefined : index)
 

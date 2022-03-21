@@ -3,15 +3,19 @@
 import FetchError from './fetch-error'
 import mergeDeep from './merge-deep'
 
-function makeWriteableStream(onNext, onError, onComplete) {
+function makeWriteableStream(
+  onNext: (response: any) => void,
+  onError: (error: Error) => void,
+  onComplete: () => void
+): WritableStream {
   return new WritableStream({
-    write(chunk, controller) {
+    write(chunk, _controller: WritableStreamDefaultController): void {
       onNext(chunk)
     },
-    close(controller) {
+    close(): void | PromiseLike<void> {
       onComplete()
     },
-    abort(reason) {
+    abort(reason: Error): void {
       if (reason.name === 'AbortError') {
         onComplete()
       } else {
@@ -21,40 +25,46 @@ function makeWriteableStream(onNext, onError, onComplete) {
   })
 }
 
-function makeLineDecoder() {
-  // eslint-disable-next-line no-undef
-  return new TransformStream({
-    start(controller) {
-      controller.buf = ''
-      controller.pos = 0
-    },
-    transform(chunk, controller) {
-      controller.buf += chunk
-      while (controller.pos < controller.buf.length) {
-        if (controller.buf[controller.pos] === '\n') {
-          const line = controller.buf.substring(0, controller.pos)
-          if (line !== '') {
-            controller.enqueue(line)
-          }
-          controller.buf = controller.buf.substring(controller.pos + 1)
-          controller.pos = 0
-        } else {
-          ++controller.pos
+class LineTransformer implements Transformer<string,object> {
+  #buf: string = ''
+  #pos: number = 0
+
+  start(controller: TransformStreamDefaultController): void {
+    this.#buf = ''
+    this.#pos = 0
+  }
+
+  transform(chunk: string, controller: TransformStreamDefaultController): void {
+    this.#buf += chunk
+    while (this.#pos < this.#buf.length) {
+      if (this.#buf[this.#pos] === '\n') {
+        const line = this.#buf.substring(0, this.#pos)
+        if (line !== '') {
+          controller.enqueue(line)
         }
-      }
-    },
-    flush(controller) {
-      if (controller.pos !== 0) {
-        controller.enqueue(controller.buf)
+        this.#buf = this.#buf.substring(this.#pos + 1)
+        this.#pos = 0
+      } else {
+        ++this.#pos
       }
     }
-  })
+  }
+
+  flush(controller: TransformStreamDefaultController): void {
+    if (this.#pos !== 0) {
+      controller.enqueue(this.#buf)
+    }
+  }
+}
+
+function makeLineDecoder(): TransformStream {
+  return new TransformStream(new LineTransformer())
 }
 
 /**
  * A GraphQL client using a streaming fetch. This can support Query, Mutation, and Subscription.
- * @param {string} url - The GraphQL url.
- * @param {Object} init - Additional parameters passed to fetch.
+ * @param {RequestInfo} url - The GraphQL url.
+ * @param {RequestInit} init - Additional parameters passed to fetch.
  * @param {string} query - The GraphQL query.
  * @param {Object} [variables] - Any variables required by the query.
  * @param {string} [operationName] - The name of the operation to invoke,
@@ -64,15 +74,15 @@ function makeLineDecoder() {
  * @returns {function} - A function that can be called to terminate the operation.
  */
 export default function graphqlStreamClient(
-  url,
-  init,
-  query,
-  variables,
-  operationName,
-  onNext,
-  onError,
-  onComplete
-) {
+  url: RequestInfo,
+  init: RequestInit,
+  query: string,
+  variables: object,
+  operationName: string | null,
+  onNext: (response: any) => void,
+  onError: (error: Error) => void,
+  onComplete: () => void
+): () => void {
   const abortController = new AbortController()
 
   init = mergeDeep(
@@ -95,7 +105,7 @@ export default function graphqlStreamClient(
 
   fetch(url, init)
     .then(response => {
-      if (response.status === 200) {
+      if (response.status === 200 && response.body !== null) {
         // A streaming response is a subscription.
         const lineDecoder = makeLineDecoder()
         const writeableStream = makeWriteableStream(onNext, onError, onComplete)
